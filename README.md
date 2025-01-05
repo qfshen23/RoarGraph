@@ -1,12 +1,5 @@
 # RoarGraph: A Projected Bipartite Graph for Efficient Cross-Modal Approximate Nearest Neighbor Search
 
-This repository includes the codes for the VLDB 2024 paper RoarGraph.
-
-![](https://api.visitorbadge.io/api/VisitorHit?user=matchyc&repo=RoarGraph&countColor=%237B1E7A)
-
-[![GitHub Clones](https://img.shields.io/badge/dynamic/json?color=success&label=Clone&query=count&url=https://gist.githubusercontent.com/matchyc/c4295bccf42f4b2be4b7777a43bd65e9/raw/clone.json&logo=github)](https://github.com/MShawon/github-clone-count-badge)
-
-
 This code builds upon the NSG repo and incorporates other open-source implementations.
 
 The main branch is the codebase of the RoarGraph paper.
@@ -14,27 +7,6 @@ The main branch is the codebase of the RoarGraph paper.
 File format: all `fbin` files begin with the number of vectors (uint32, 4 bytes), dimension (uint32, 4 bytes), and followed by the vector data. (Same format as big-ann competition.)
 
 We use zenodo `https://zenodo.org/` to publish research data and indexes files online (zenodo provides 50GB for free).
-
-0. Prerequisite
-```
-cmake >= 3.24
-g++ >= 9.4
-CPU supports AVX-512
-
-Python >= 3.8
-Python package:
-numpy
-urllib
-tarfile
-```
-
-```
-sudo apt install libaio-dev libgoogle-perftools-dev clang-format libboost-all-dev libmkl-full-dev
-```
-
-```bash
-git clone --recursive https://github.com/matchyc/RoarGraph.git
-```
 
 1. prepare datasets
 The script will download datasets used in the paper and save them in the `./data` directory.
@@ -66,12 +38,14 @@ You can change the code in the `compute_groundtruth.cpp` file to adjust the memo
 - query_file: the training queries.
 - gt_file: save path.
 - K: $N_q$ in the paper.
+
 ```bash
 prefix=../data/t2i-10M
 cp ./thirdparty/DiskANN/tests/utils/compute_groundtruth compute_groundtruth
 mkdir -p ${prefix}
 ./compute_groundtruth --data_type float --dist_fn mips --base_file ${prefix}/base.10M.fbin  --query_file ${prefix}/query.train.10M.fbin  --gt_file ${prefix}/train.gt.bin --K 100
 ```
+
 This step can take hours (see evaluations in Section 5 in the paper). You can just leverage GPU for faster computation, like [raft](https://github.com/rapidsai/raft). It is easy to use by following the instructions, you can reach me out for getting the python scripts to use raft on GPU for these three datasets.
 
 Otherwise, you can slice the training query set and use 10% of it to save much time and evaluate the effects of different training set sizes, wihch can also deliver decent performance.
@@ -85,6 +59,7 @@ Otherwise, you can slice the training query set and use 10% of it to save much t
 - M_pjbp: $M$ in the paper.
 - L_pjpq: $L$ in the paper.
 - T: number of threads employed to construct the graph.
+
 ```bash
 cd build
 cmake .. -DCMAKE_BUILD_TYPE=Release && make -j
@@ -130,15 +105,4 @@ First, download the built indexes used for evaluations.
 Download the query file and ground truth file, set the correct projection_index_save_path as the index path to perform searches.
 
 If you plan to use the constructed index, you can avoid downloading the big dataset files, but only download the query file and ground truth file from links that can be obtained from the `prepare_dataset.sh` script.
-
-## License
-MIT License
-
-
-
-## Contact
-For questions or inquiries, feel free to reach out to Meng Chen at
-[mengchen22@m.fudan.edu.cn](mailto:mengchen22@m.fudan.edu.cn)
-
-
 

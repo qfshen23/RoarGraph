@@ -82,7 +82,7 @@ int main(int argc, char **argv) {
     uint32_t base_num, base_dim, sq_num, sq_dim;
     efanna2e::load_meta<float>(base_data_file.c_str(), base_num, base_dim);
     efanna2e::load_meta<float>(sampled_query_data_file.c_str(), sq_num, sq_dim);
-    efanna2e::Metric dist_metric = efanna2e::INNER_PRODUCT;
+    efanna2e::Metric dist_metric = efanna2e::INNER_PRODUCT; // default
     if (dist == "l2") {
         dist_metric = efanna2e::L2;
         std::cout << "Using l2 as distance metric" << std::endl;
