@@ -26,8 +26,8 @@ int main(int argc, char **argv) {
     std::string bipartite_index_save_file, projection_index_save_file, learn_base_nn_file, base_learn_nn_file;
     std::string data_type;
     std::string dist;
-    uint32_t M_sq;
-    uint32_t M_pjbp, L_pjpq;
+    uint32_t M_sq;  // N_q
+    uint32_t M_pjbp, L_pjpq;  // M, L
     // uint32_t L_pq;
     uint32_t num_threads;
 
@@ -82,16 +82,16 @@ int main(int argc, char **argv) {
     uint32_t base_num, base_dim, sq_num, sq_dim;
     efanna2e::load_meta<float>(base_data_file.c_str(), base_num, base_dim);
     efanna2e::load_meta<float>(sampled_query_data_file.c_str(), sq_num, sq_dim);
-    efanna2e::Metric dist_metric = efanna2e::INNER_PRODUCT; // default
+    efanna2e::Metric dist_metric = efanna2e::INNER_PRODUCT; // IP by default
     if (dist == "l2") {
         dist_metric = efanna2e::L2;
-        std::cout << "Using l2 as distance metric" << std::endl;
+        std::cout << "Using L2 distance." << std::endl;
     } else if (dist == "ip") {
         dist_metric = efanna2e::INNER_PRODUCT;
-        std::cout << "Using inner product as distance metric" << std::endl;
+        std::cout << "Using IP distance." << std::endl;
     } else if (dist == "cosine") {
         dist_metric = efanna2e::COSINE;
-        std::cout << "Using cosine as distance metric" << std::endl;
+        std::cout << "Using angular distance." << std::endl;
     } else {
         std::cout << "Unknown distance type: " << dist << std::endl;
         return -1;

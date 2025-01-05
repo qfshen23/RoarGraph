@@ -200,12 +200,13 @@ void IndexBipartite::BuildRoarGraph(size_t n_sq, const float *sq_data, size_t n_
     // project bipartite
     BipartiteProjectionReserveSpace(parameters);
 
+    // calculate the entry point on base vectors
     CalculateProjectionep();
-
+    // projection_ep_: the index of the entry point
     assert(projection_ep_ < nd_);
-    std::cout << "begin link projection" << std::endl;
+
+    std::cout << "start link projection" << std::endl;
     LinkProjection(parameters);
-    std::cout << std::endl;
     // std::cout << "Starting collect points" << std::endl;
     // auto co_s = std::chrono::high_resolution_clock::now();
     // CollectPoints(parameters);
@@ -213,7 +214,6 @@ void IndexBipartite::BuildRoarGraph(size_t n_sq, const float *sq_data, size_t n_
     // diff = co_e - co_s;
     // std::cout << "Collect points time: " << diff.count() << std::endl;
 
-    // e = std::chrono::high_resolution_clock::now();
     auto e = std::chrono::high_resolution_clock::now();
     auto diff = e - s;
     std::cout << "Build projection graph time: " << diff.count() / (1000 * 1000 * 1000) << std::endl;
@@ -1048,9 +1048,11 @@ void IndexBipartite::LinkProjection(const Parameters &parameters) {
     omp_set_num_threads(parameters.Get<uint32_t>("num_threads"));
     std::vector<uint32_t> vis_order;
     std::vector<uint32_t> vis_order_sq;
+    // u32_nd_: #base vectors
     for (uint32_t i = 0; i < u32_nd_; ++i) {
         vis_order.push_back(i);
     }
+    // u32_nd_sq_: #sampled query vectors
     for (uint32_t i = 0; i < u32_nd_sq_; ++i) {
         vis_order_sq.push_back(i);
     }
@@ -1097,13 +1099,14 @@ void IndexBipartite::LinkProjection(const Parameters &parameters) {
     }
 
     std::cout << std::endl;
+    // test if the pivot can establish reverse links to its in-neighbors
 #pragma omp parallel for schedule(static, 100)
     for (uint32_t i = 0; i < vis_order.size(); ++i) {
         uint32_t node = vis_order[i];
         ProjectionAddReverse(node, parameters);
     }
 
-
+    // pruning
 #pragma omp parallel for schedule(static, 2048)
     for (uint32_t i = 0; i < vis_order.size(); ++i) {
         size_t node = (size_t)vis_order[i];
@@ -1209,7 +1212,6 @@ void IndexBipartite::LinkProjection(const Parameters &parameters) {
         PruneProjectionBaseSearchCandidates(full_retset, data_bp_ + dimension_ * node, node, parameters, pruned_list);
         {
             LockGuard guard(locks_[node]);
-
             supply_nbrs_[node] = pruned_list;
         }
         SupplyAddReverse(node, parameters);
@@ -1246,7 +1248,7 @@ void IndexBipartite::LinkProjection(const Parameters &parameters) {
             }
         }
     }
-    std::cout << "finish connectivity enhancement degree check" << std::endl;
+    std::cout << "finish connectivity enhancement degree check" << std::endl; // why needs check?
 
 #pragma omp parallel for schedule(dynamic, 100)
     for (size_t i = 0; i < projection_graph_.size(); ++i) {
@@ -1388,6 +1390,8 @@ void IndexBipartite::SupplyAddReverse(uint32_t src_node, const Parameters &param
     }
 }
 
+// add reverse
+// each point may exist in multiple points' neighbor list
 void IndexBipartite::ProjectionAddReverse(uint32_t src_node, const Parameters &parameters) {
     uint32_t M_pjbp = parameters.Get<uint32_t>("M_pjbp");
     std::vector<uint32_t> &nbrs = projection_graph_[src_node];
@@ -1617,7 +1621,6 @@ void IndexBipartite::PruneBiSearchBaseGetBase(std::vector<Neighbor> &search_pool
     std::vector<Neighbor> base_pool;
     std::vector<uint32_t> base_id;
 
-
     for (auto &b_node : search_pool) {
         if (std::find(base_id.begin(), base_id.end(), b_node.id) == base_id.end()) {
             if (b_node.id == tgt_base) {
@@ -1682,6 +1685,7 @@ void IndexBipartite::PruneBiSearchBaseGetBase(std::vector<Neighbor> &search_pool
         }
     }
 
+    // add points from base_pool
     for (size_t i = 1; i < base_pool.size() && result.size() < M_pjbp; ++i) {
         if (std::find(result.begin(), result.end(), base_pool[i].id) == result.end()) {
             if (base_pool[i].id != tgt_base) {
@@ -1816,9 +1820,7 @@ uint32_t IndexBipartite::PruneProjectionCandidates(std::vector<Neighbor> &search
             // }
             // float dik = distance_->compare(data_bp_ + dimension_ * p.id, data_bp_ + dimension_ * src_node,
             // dimension_); if (metric_ == efanna2e::Metric::INNER_PRODUCT) {
-            //     dik = -dik;
-            // }
-            if (djk < dik) {
+            //     dik = -dik;PruneProjectionBaseSearchCandidates(full_retset, data_bp_ + dimension_ * node, node, parameters, pruned_list);
                 occlude = true;
                 break;
             }
@@ -2624,6 +2626,7 @@ void IndexBipartite::LoadLearnBaseKNN(const char *filename) {
     if (!in.is_open()) {
         throw std::runtime_error("Could not open file " + std::string(filename));
     }
+    // .xbin format: number of points, dimension, data
     uint32_t npts;
     uint32_t k_dim;
     in.read((char *)&npts, sizeof(npts));
